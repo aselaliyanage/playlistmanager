@@ -2,7 +2,10 @@
 @attribute [Authorize]
 
 @using Chinook.Models
+@using Chinook.Services;
 @using Microsoft.EntityFrameworkCore
+@using System.Security.Claims;
+@inject IPlaylistService playListService;
 
 <PageTitle>Index</PageTitle>
 
@@ -36,10 +39,17 @@ else
 @code {
     private List<Artist> Artists;
     [Inject] IDbContextFactory<ChinookContext> DbFactory { get; set; }
+    private string CurrentUserId;
+    private string? newPlayListName;
+    private Modal PlaylistDialog { get; set; }
+    [CascadingParameter] private Task<AuthenticationState> authenticationState { get; set; }
+
+
 
     protected override async Task OnInitializedAsync() {
         await InvokeAsync(StateHasChanged);
         Artists = await GetArtists();
+        newPlayListName = string.Empty;
     }
 
     public async Task<List<Artist>> GetArtists()
@@ -55,4 +65,44 @@ else
         var dbContext = await DbFactory.CreateDbContextAsync();
         return dbContext.Albums.Where(a => a.ArtistId == artistId).ToList();
     }
+
+    private void OpenPlaylistDialog()
+    {
+        PlaylistDialog.Open();
+    }
+
+    private async Task CreatePlaylist()
+    {
+        if (string.IsNullOrEmpty(newPlayListName))
+        {
+            return;
+        }
+        var newPlayList = new Models.Playlist() { Name = newPlayListName };
+        await playListService.CreateNewPlaylistAsync(newPlayList, CurrentUserId);
+        newPlayListName = string.Empty;
+        PlaylistDialog.Close();
+    }
+
+    private async Task<string> GetUserId()
+    {
+        var user = (await authenticationState).User;
+        var userId = user.FindFirst(u => u.Type.Contains(ClaimTypes.NameIdentifier))?.Value;
+        return userId;
+    }
 }
+
+<Modal @ref="PlaylistDialog">
+    <Title>
+        Create Playlist
+    </Title>
+    <Body>
+
+        <div class="form-group mb-2">
+            <label for="playlistName">Playlist Name</label>
+            <input @bind="@newPlayListName" type="text" id="playlistName" class="form-control" placeholder="Name for the new playlist">
+        </div>
+    </Body>
+    <Footer>
+        <button class="btn btn-success" @onclick="CreatePlaylist">Save</button>
+    </Footer>
+</Modal>

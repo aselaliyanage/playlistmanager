@@ -3,8 +3,14 @@
 
 @using Chinook.Models
 @using Chinook.ClientModels
+@using Chinook.Services;
+@using Microsoft.AspNetCore.SignalR;
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
+@inject IArtistService artistService;
+@inject ITracksService tracksService;
+@inject IPlaylistService playListService;
+
 
 @if (!string.IsNullOrWhiteSpace(InfoMessage))
 {
@@ -60,34 +66,26 @@ else
 @code {
     [Parameter] public long ArtistId { get; set; }
     [CascadingParameter] private Task<AuthenticationState> authenticationState { get; set; }
-    [Inject] IDbContextFactory<ChinookContext> DbFactory { get; set; }
     private Modal PlaylistDialog { get; set; }
 
     private Artist Artist;
-    private List<PlaylistTrack> Tracks;
+    private List<ClientModels.PlaylistTrack> Tracks;
     private DbContext DbContext;
-    private PlaylistTrack SelectedTrack;
+    private ClientModels.PlaylistTrack SelectedTrack;
     private string InfoMessage;
     private string CurrentUserId;
+    private List<ClientModels.Playlist> playlists;
+    private long selectedPlayListId;
+    private string newPlaylistName;
 
     protected override async Task OnInitializedAsync()
     {
         await InvokeAsync(StateHasChanged);
+
         CurrentUserId = await GetUserId();
-        var DbContext = await DbFactory.CreateDbContextAsync();
-
-        Artist = DbContext.Artists.SingleOrDefault(a => a.ArtistId == ArtistId);
-
-        Tracks = DbContext.Tracks.Where(a => a.Album.ArtistId == ArtistId)
-            .Include(a => a.Album)
-            .Select(t => new PlaylistTrack()
-                {
-                    AlbumTitle = (t.Album == null ? "-" : t.Album.Title),
-                    TrackId = t.TrackId,
-                    TrackName = t.Name,
-                    IsFavorite = t.Playlists.Where(p => p.UserPlaylists.Any(up => up.UserId == CurrentUserId && up.Playlist.Name == "Favorites")).Any()
-                })
-            .ToList();
+        Artist = await artistService.GetArtistAsync(ArtistId);
+        Tracks = await tracksService.GetTracksOfArtist(ArtistId, CurrentUserId);
+        playlists = await playListService.GetCurrentUserPlaylistsAsync();
     }
 
     private async Task<string> GetUserId()
@@ -112,15 +110,21 @@ else
     private void OpenPlaylistDialog(long trackId)
     {
         CloseInfoMessage();
+        newPlaylistName = string.Empty;
         SelectedTrack = Tracks.FirstOrDefault(t => t.TrackId == trackId);
         PlaylistDialog.Open();
     }
 
-    private void AddTrackToPlaylist()
+    private async Task AddTrackToPlaylist()
     {
         CloseInfoMessage();
-        InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist {{playlist name}}.";
+        var (isAdded, playlistId) = await playListService.AddTrackToPlaylistAsync(newPlaylistName, selectedPlayListId, SelectedTrack.TrackId, CurrentUserId);
+        if (isAdded)
+        {
+            InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist";
+        }
         PlaylistDialog.Close();
+
     }
 
     private void CloseInfoMessage()
@@ -145,15 +149,16 @@ else
 
         <div class="form-group mb-2">
             <label for="ExistingPlaylist">Add to existing playlist</label>
-            <select class="form-control" id="ExistingPlaylist">
-                <option>Playlist 1</option>
-                <option>Playlist 2</option>
-                <option>Playlist 3</option>
+            <select class="form-control" id="ExistingPlaylist" @bind="selectedPlayListId">
+                @foreach (var item in playlists)
+                {
+                    <option value="@item.Id">@item.Name</option>
+                }
             </select>
         </div>
         <div class="form-group mb-2">
             <label for="NewPlaylist">Create new playlist</label>
-            <input type="text" id="NewPlaylist" class="form-control" placeholder="Name for the new playlist">
+            <input type="text" id="NewPlaylist" @bind="newPlaylistName" class="form-control" placeholder="Name for the new playlist">
         </div>
     </Body>
     <Footer>

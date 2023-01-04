@@ -2,8 +2,10 @@
 @attribute [Authorize]
 
 @using Chinook.Models
+@using Chinook.Services;
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
+@inject IPlaylistService playlistService;
 
 <h1>Playlist <strong>@Playlist.Name</strong></h1>
 
@@ -74,24 +76,19 @@ else
         CurrentUserId = await GetUserId();
 
         await InvokeAsync(StateHasChanged);
-        var DbContext = await DbFactory.CreateDbContextAsync();
+        await Init();
+    }
 
-        Playlist = DbContext.Playlists
-            .Include(a => a.Tracks).ThenInclude(a => a.Album).ThenInclude(a => a.Artist)
-            .Where(p => p.PlaylistId == PlaylistId)
-            .Select(p => new ClientModels.Playlist()
-                {
-                    Name = p.Name,
-                    Tracks = p.Tracks.Select(t => new ClientModels.PlaylistTrack()
-                    {
-                        AlbumTitle = t.Album.Title,
-                        ArtistName = t.Album.Artist.Name,
-                        TrackId = t.TrackId,
-                        TrackName = t.Name,
-                        IsFavorite = t.Playlists.Where(p => p.UserPlaylists.Any(up => up.UserId == CurrentUserId && up.Playlist.Name == "Favorites")).Any()
-                    }).ToList()
-                })
-            .FirstOrDefault();
+    protected override async Task OnParametersSetAsync()
+    {
+        await Init();
+        await base.OnParametersSetAsync();
+    }
+
+    public async Task Init()
+    {
+        var DbContext = await DbFactory.CreateDbContextAsync();
+        Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
     }
 
     private async Task<string> GetUserId()

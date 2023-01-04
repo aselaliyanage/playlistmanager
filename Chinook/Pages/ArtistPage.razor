@@ -1,15 +1,18 @@
 ﻿@page "/artist/{ArtistId:long}"
 @attribute [Authorize]
 
+@using Chinook.Hubs;
 @using Chinook.Models
 @using Chinook.ClientModels
 @using Chinook.Services;
+@using Microsoft.AspNetCore.SignalR.Client;
 @using Microsoft.AspNetCore.SignalR;
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
 @inject IArtistService artistService;
 @inject ITracksService tracksService;
 @inject IPlaylistService playListService;
+@inject IHubContext<PlaylistHub> hubContext;
 
 
 @if (!string.IsNullOrWhiteSpace(InfoMessage))
@@ -77,6 +80,7 @@ else
     private List<ClientModels.Playlist> playlists;
     private long selectedPlayListId;
     private string newPlaylistName;
+    private readonly IHubContext<PlaylistHub> _hubContext;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,7 +125,17 @@ else
         var (isAdded, playlistId) = await playListService.AddTrackToPlaylistAsync(newPlaylistName, selectedPlayListId, SelectedTrack.TrackId, CurrentUserId);
         if (isAdded)
         {
-            InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist";
+            var playlistName = newPlaylistName;
+            if(playlistId == 0) // If the track is added to a new playlist
+            {
+                playlistName = playlists.First(x => x.Id == selectedPlayListId).Name;
+            }
+            else // If the track has been added to an existing playlist
+            {
+                await hubContext.Clients.All.SendAsync("PlaylistAdded", playlistId, newPlaylistName);
+            }
+
+            InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist {playlistName}.";
         }
         PlaylistDialog.Close();
 

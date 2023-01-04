@@ -1,4 +1,15 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Chinook.ClientModels;
+@using Chinook.Services;
+@using System.Security.Claims;
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject IPlaylistService playListService;
+@inject NavMenuStateService navMenuState;
+@*@implements IDisposable*@
+
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Chinook</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -15,21 +26,123 @@
             </NavLink>
         </div>
         <div class="nav-item px-3">
+            <NavLink class="nav-link" @onclick="OpenPlaylistDialog" Match="NavLinkMatch.All">
+                <span class="oi oi-plus" aria-hidden="true"></span>Create New Playlist
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
             <NavLink class="nav-link" href="playlist/1">
                 <i class="bi bi-music-note-list me-3" style="font-size: 1.25em"></i>My favorite tracks
             </NavLink>
         </div>
-
+        @foreach (var item in playlists)
+        {
+            var playlistLink = "/playlist/" + @item.Id;
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="@playlistLink">
+                    <i class="bi bi-music-note-list me-3" style="font-size: 1.25em"></i>@item.Name
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
 @code {
+    private Modal PlaylistDialog { get; set; }
     private bool collapseNavMenu = true;
+    [CascadingParameter] private Task<AuthenticationState> authenticationState { get; set; }
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private IList<Playlist> playlists;
+    private string CurrentUserId;
+    private string? newPlayListName;
+    private HubConnection? hubConnection;
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
     }
+
+    protected override async Task OnInitializedAsync()
+    {        
+        //navMenuState.OnChange += MenuChanged;
+        CurrentUserId = await GetUserId();
+        await Init();
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7295/Artist")
+            .Build();
+
+        hubConnection.On<long, string>("PlaylistAdded", (id, playlistName) =>
+        {
+            playlists.Add(new Playlist { Id = id, Name = playlistName });
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task Init()
+    {
+        newPlayListName = string.Empty;
+        playlists = await playListService.GetCurrentUserPlaylistsAsync();
+    }
+
+    private async Task<string> GetUserId()
+    {
+        var user = (await authenticationState).User;
+        var userId = user.FindFirst(u => u.Type.Contains(ClaimTypes.NameIdentifier))?.Value;
+        return userId!;
+    }
+
+    private void OpenPlaylistDialog()
+    {
+        PlaylistDialog.Open();
+    }
+
+    private async Task CreatePlaylist()
+    {
+        if (string.IsNullOrEmpty(newPlayListName))
+        {
+            return;
+        }
+        var newPlayList = new Models.Playlist() { Name = newPlayListName };
+        await playListService.CreateNewPlaylistAsync(newPlayList, CurrentUserId);
+        await Init();
+        PlaylistDialog.Close();
+    }
+
+    //public void Dispose()
+    //{
+    //    navMenuState.OnChange -= MenuChanged;
+    //}
+
+    //private void MenuChanged(long newPlaylistId, string newPlaylistName)
+    //{
+    //    playlists.Add(new Playlist { Id = newPlaylistId, Name = newPlaylistName });
+    //    InvokeAsync(StateHasChanged);
+    //}
 }
+
+<Modal @ref="PlaylistDialog">
+    <Title>
+        Create Playlist
+    </Title>
+    <Body>
+
+        <div class="form-group mb-2">
+            <label for="playlistName">Playlist Name</label>
+            <input @bind="@newPlayListName" type="text" id="playlistName" class="form-control" placeholder="Name for the new playlist">
+        </div>
+    </Body>
+    <Footer>
+        <button class="btn btn-success" @onclick="CreatePlaylist">Save</button>
+    </Footer>
+</Modal>

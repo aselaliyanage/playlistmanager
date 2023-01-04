@@ -1,5 +1,6 @@
 using Chinook;
 using Chinook.Areas.Identity;
+using Chinook.Hubs;
 using Chinook.Models;
 using Chinook.Services;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -23,9 +24,15 @@ builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuth
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<ITracksService, TracksService>();
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        new[] { "application/octet-stream" });
+});
 
 var app = builder.Build();
 
+app.UseResponseCompression();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -50,6 +57,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapBlazorHub();
+
+app.Use(async (context, next) =>
+{
+    var hubContext = context.RequestServices.GetRequiredService<IHubContext<PlaylistHub>>();
+
+    if (next != null)
+    {
+        await next.Invoke();
+    }
+});
+app.MapHub<PlaylistHub>("/Artist");
 app.MapFallbackToPage("/_Host");
 
 app.Run();

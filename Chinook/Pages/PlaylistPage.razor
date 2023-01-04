@@ -64,7 +64,6 @@ else
 
 @code {
     [Parameter] public long PlaylistId { get; set; }
-    [Inject] IDbContextFactory<ChinookContext> DbFactory { get; set; }
     [CascadingParameter] private Task<AuthenticationState> authenticationState { get; set; }
 
     private Chinook.ClientModels.Playlist Playlist;
@@ -87,7 +86,6 @@ else
 
     public async Task Init()
     {
-        var DbContext = await DbFactory.CreateDbContextAsync();
         Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
     }
 
@@ -110,10 +108,16 @@ else
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} removed from playlist Favorites.";
     }
 
-    private void RemoveTrack(long trackId)
+    private async Task RemoveTrack(long trackId)
     {
         CloseInfoMessage();
-
+        var isRemoved = await playlistService.RemoveTrackFromPlaylist(PlaylistId, trackId);
+        if (isRemoved)
+        {
+            var track = Playlist.Tracks.FirstOrDefault(t => t.TrackId == trackId);
+            await Init();
+            InfoMessage = $"Track {track!.TrackName} is removed from the playlist {Playlist.Name}.";
+        }
     }
 
     private void CloseInfoMessage()

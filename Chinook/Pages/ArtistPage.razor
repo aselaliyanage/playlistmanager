@@ -129,7 +129,7 @@ else
             }
             else // If the track has been added to an existing playlist
             {
-                menuStateService.MenuChanged(playlistId, newPlaylistName);
+                await menuStateService.MenuChanged(playlistId, newPlaylistName);
             }
 
             InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist {playlistName}.";

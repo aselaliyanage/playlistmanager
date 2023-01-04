@@ -149,6 +149,19 @@ namespace Chinook.Services
                 return false;
             }
         }
+
+        public async Task<bool> RenamePlaylist(long playlistId, string newPlaylistname)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            var playListInDb = dbContext.Playlists.Include(x => x.Tracks).AsTracking().Where(x => x.PlaylistId == playlistId).FirstOrDefault();
+            if(playListInDb != null)
+            {
+                playListInDb.Name = newPlaylistname;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
     }
 
 

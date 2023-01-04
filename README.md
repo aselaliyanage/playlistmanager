@@ -15,8 +15,12 @@ When creating a user account, you will see this:
 "This app does not currently have a real email sender registered, see these docs for how to configure a real email sender. Normally this would be emailed: Click here to confirm your account."
 After you click 'Click here to confirm your account' you should be able to login.
 
-#Chinook Developer Note
-Branches 
+# Chinook Developer Note
+
+There are branches created for the above features and respective branches for the features are as follows
+
+# Branches 
 	-> Feature01 - Moving the data retrieval logic in to separate services
 	-> Feature02 - Automatically refreshing the menu items upon adding a playlist
 	-> Feature03 - Removing a track from the playlist
+	-> Feature04 - Renaming a playlist

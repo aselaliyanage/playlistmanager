@@ -100,10 +100,10 @@
         navMenuState.OnChange -= MenuChanged;
     }
 
-    private void MenuChanged(long newPlaylistId, string newPlaylistName)
+    private async Task MenuChanged(long newPlaylistId, string newPlaylistName)
     {
-        playlists.Add(new Playlist { Id = newPlaylistId, Name = newPlaylistName });
-        InvokeAsync(StateHasChanged);
+        await Init();
+        await InvokeAsync(StateHasChanged);
     }
 }
 

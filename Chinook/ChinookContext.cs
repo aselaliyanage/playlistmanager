@@ -226,8 +226,8 @@ public partial class ChinookContext : IdentityDbContext<ChinookUser>
                 .WithMany(p => p.Playlists)
                 .UsingEntity<Dictionary<string, object>>(
                     "PlaylistTrack",
-                    l => l.HasOne<Track>().WithMany().HasForeignKey("TrackId").OnDelete(DeleteBehavior.ClientSetNull),
-                    r => r.HasOne<Playlist>().WithMany().HasForeignKey("PlaylistId").OnDelete(DeleteBehavior.ClientSetNull),
+                    l => l.HasOne<Track>().WithMany().HasForeignKey("TrackId").OnDelete(DeleteBehavior.ClientCascade),
+                    r => r.HasOne<Playlist>().WithMany().HasForeignKey("PlaylistId").OnDelete(DeleteBehavior.ClientCascade),
                     j =>
                     {
                         j.HasKey("PlaylistId", "TrackId");
@@ -282,7 +282,7 @@ public partial class ChinookContext : IdentityDbContext<ChinookUser>
 
             entity.HasOne(up => up.Playlist)
                 .WithMany(u => u.UserPlaylists)
-                .HasForeignKey(up => up.PlaylistId);
+                .HasForeignKey(up => up.PlaylistId).OnDelete(DeleteBehavior.ClientCascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

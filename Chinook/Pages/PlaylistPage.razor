@@ -7,11 +7,12 @@
 @using System.Security.Claims;
 @inject IPlaylistService playlistService;
 @inject NavMenuStateService menuStateService;
-
+@inject NavigationManager navigationManager;
 
 <div class="d-flex">
-    <h1 class="">Playlist <strong>@Playlist.Name</strong></h1>
+    <h1 style="margin-right:10px">Playlist <strong>@Playlist.Name</strong></h1>
     <a href="#" class="m-1 px-1" title="Rename the playlist" @onclick="@(() => { isEditMode = !isEditMode; newPlaylistName = string.Empty; })" @onclick:preventDefault><i class="bi bi-pencil-square" style='font-size:25px;'></i></a>
+    <a href="#" class="m-1 px-1" title="Delete the playlist" @onclick="@(() => OpenDeleteConfirmation())" @onclick:preventDefault><i class="bi bi-trash" style='font-size:25px;'></i></a>
 </div>
 
 @if (isEditMode)
@@ -21,6 +22,7 @@
             <label for="NewPlaylist" style="margin-right:10px;">PlaylistName *</label>
             <input type="text" id="NewPlaylist" @bind="newPlaylistName" class="form-control-sm" style="margin-right:10px;" placeholder="New name for the playlist">
             <button class="btn btn-primary" @onclick="@(() => RenamePlaylist())">Save</button>
+            <button class="btn btn-link" @onclick="@(() => { isEditMode = !isEditMode; })">Cancel</button>
         </div>
     </div>
 }
@@ -87,6 +89,7 @@ else
     private string InfoMessage;
     private string newPlaylistName;
     private bool isEditMode = false;
+    private Modal ConfirmDialog { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,4 +163,35 @@ else
         }
     }
 
+    private async Task DeletePlaylist()
+    {
+        var isRemoved = await playlistService.RemovePlaylist(PlaylistId);
+        if (isRemoved)
+        {
+            navigationManager.NavigateTo("");
+        }
+    }
+
+    private void OpenDeleteConfirmation()
+    {
+        ConfirmDialog.Open();
+    }
+
+    private void CloseDeleteConfirmation()
+    {
+        ConfirmDialog.Close();
+    }
 }
+
+<Modal @ref="ConfirmDialog">
+    <Title>
+        Delete confirmation
+    </Title>
+    <Body>
+        <p>Are you sure you want to delete the playlist @Playlist.Name ?</p>
+    </Body>
+    <Footer>
+        <button class="btn btn-danger" @onclick="DeletePlaylist">Yes, Delete</button>
+        <button class="btn btn-light" @onclick="CloseDeleteConfirmation">Cancel</button>
+    </Footer>
+</Modal>

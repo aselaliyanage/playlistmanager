@@ -14,3 +14,6 @@ This application is unfinished. Please complete below tasks. Spend max 3 hours. 
 When creating a user account, you will see this:
 "This app does not currently have a real email sender registered, see these docs for how to configure a real email sender. Normally this would be emailed: Click here to confirm your account."
 After you click 'Click here to confirm your account' you should be able to login.
+
+#Chinook Developer Note
+Branch -> Feature01 - Moving the data retrieval logic in to separate services

@@ -3,8 +3,6 @@ using Chinook.Areas.Identity;
 using Chinook.Models;
 using Chinook.Services;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,9 +21,9 @@ builder.Services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuth
 builder.Services.AddScoped<IPlaylistService, PlaylistService>();
 builder.Services.AddScoped<IArtistService, ArtistService>();
 builder.Services.AddScoped<ITracksService, TracksService>();
+builder.Services.AddSingleton<NavMenuStateService>();
 
 var app = builder.Build();
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

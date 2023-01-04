@@ -125,6 +125,30 @@ namespace Chinook.Services
 
             return (isTrackAdded, newPlaylistId);
         }
+
+        public async Task<bool> RemoveTrackFromPlaylist(long playlistId, long trackId)
+        {
+            try
+            {
+                using var dbContext = await _appDbContext.CreateDbContextAsync();
+                var playListInDb = dbContext.Playlists.Include(x => x.Tracks).AsTracking().Where(x => x.PlaylistId == playlistId).FirstOrDefault();
+                if(playListInDb != null)
+                {
+                    var track = playListInDb?.Tracks?.First(x => x.TrackId == trackId);
+                    playListInDb!.Tracks.Remove(track!);
+                    dbContext.SaveChanges();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
     }
 
 

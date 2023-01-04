@@ -16,4 +16,7 @@ When creating a user account, you will see this:
 After you click 'Click here to confirm your account' you should be able to login.
 
 #Chinook Developer Note
-Branch -> Feature01 - Moving the data retrieval logic in to separate services
+Branches 
+	-> Feature01 - Moving the data retrieval logic in to separate services
+	-> Feature02 - Automatically refreshing the menu items upon adding a playlist
+	-> Feature03 - Removing a track from the playlist

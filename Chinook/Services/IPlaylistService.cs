@@ -9,5 +9,6 @@ namespace Chinook.Services
         Task<bool> CreateNewPlaylistAsync(Models.Playlist playlist, string userId);
         Task<(bool, long)> AddTrackToPlaylistAsync(string newPlaylistName, long playlistId, long trackId, string userId);
         Task<bool> RemoveTrackFromPlaylist(long playlistId, long trackId);
+        Task<bool> RenamePlaylist(long playlistId, string newPlaylistname);
     }
 }

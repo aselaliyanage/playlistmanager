@@ -6,8 +6,24 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
 @inject IPlaylistService playlistService;
+@inject NavMenuStateService menuStateService;
 
-<h1>Playlist <strong>@Playlist.Name</strong></h1>
+
+<div class="d-flex">
+    <h1 class="">Playlist <strong>@Playlist.Name</strong></h1>
+    <a href="#" class="m-1 px-1" title="Rename the playlist" @onclick="@(() => { isEditMode = !isEditMode; newPlaylistName = string.Empty; })" @onclick:preventDefault><i class="bi bi-pencil-square" style='font-size:25px;'></i></a>
+</div>
+
+@if (isEditMode)
+{
+    <div class="form-group mb-3">
+        <div class="d-flex">
+            <label for="NewPlaylist" style="margin-right:10px;">PlaylistName *</label>
+            <input type="text" id="NewPlaylist" @bind="newPlaylistName" class="form-control-sm" style="margin-right:10px;" placeholder="New name for the playlist">
+            <button class="btn btn-primary" @onclick="@(() => RenamePlaylist())">Save</button>
+        </div>
+    </div>
+}
 
 @if (!string.IsNullOrWhiteSpace(InfoMessage))
 {
@@ -69,23 +85,27 @@ else
     private Chinook.ClientModels.Playlist Playlist;
     private string CurrentUserId;
     private string InfoMessage;
+    private string newPlaylistName;
+    private bool isEditMode = false;
 
     protected override async Task OnInitializedAsync()
     {
         CurrentUserId = await GetUserId();
-
         await InvokeAsync(StateHasChanged);
         await Init();
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        CloseInfoMessage();
         await Init();
         await base.OnParametersSetAsync();
     }
 
     public async Task Init()
     {
+        isEditMode = false;
+
         Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
     }
 
@@ -123,6 +143,21 @@ else
     private void CloseInfoMessage()
     {
         InfoMessage = "";
+    }
+
+    private async Task RenamePlaylist()
+    {
+        if (string.IsNullOrEmpty(newPlaylistName))
+        {
+            return;
+        }
+        var isRenamed = await playlistService.RenamePlaylist(PlaylistId, newPlaylistName);
+        if (isRenamed)
+        {
+            await Init();
+            InfoMessage = $"Playlist is renamed successfully";
+            await menuStateService.MenuChanged(PlaylistId, newPlaylistName);
+        }
     }
 
 }

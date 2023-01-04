@@ -2,8 +2,8 @@
 {
     public class NavMenuStateService
     {
-        public Func<long, string, Task> OnChange;
+        public Func<Task> OnChange;
 
-        public async Task MenuChanged(long newPlaylistId, string newPlaylistName) => await OnChange!.Invoke(newPlaylistId, newPlaylistName);
+        public async Task MenuChanged() => await OnChange!.Invoke();
     }
 }

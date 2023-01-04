@@ -123,13 +123,13 @@ else
         if (isAdded)
         {
             var playlistName = newPlaylistName;
-            if(playlistId == 0) // If the track is added to a new playlist
+            if (playlistId == 0) // If the track has been added to an existing playlist
             {
                 playlistName = playlists.First(x => x.Id == selectedPlayListId).Name;
             }
-            else // If the track has been added to an existing playlist
+            else // If the track is added to a new playlist
             {
-                await menuStateService.MenuChanged(playlistId, newPlaylistName);
+                await menuStateService.MenuChanged();
             }
 
             InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist {playlistName}.";

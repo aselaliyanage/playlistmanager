@@ -100,7 +100,7 @@
         navMenuState.OnChange -= MenuChanged;
     }
 
-    private async Task MenuChanged(long newPlaylistId, string newPlaylistName)
+    private async Task MenuChanged()
     {
         await Init();
         await InvokeAsync(StateHasChanged);

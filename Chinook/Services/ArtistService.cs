@@ -17,5 +17,17 @@ namespace Chinook.Services
             using var dbContext = await _appDbContext.CreateDbContextAsync();
             return dbContext.Artists.SingleOrDefault(a => a.ArtistId == id);
         }
+
+        public async Task<List<Artist>> GetAllArtistsAsync()
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            return dbContext.Artists.ToList();
+        }
+
+        public async Task<List<Album>> GetAlbumsOfArtist(int artistId)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            return dbContext.Albums.Where(a => a.ArtistId == artistId).ToList();
+        }
     }
 }

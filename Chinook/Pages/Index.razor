@@ -6,6 +6,7 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
 @inject IPlaylistService playListService;
+@inject IArtistService artistService;
 
 <PageTitle>Index</PageTitle>
 
@@ -17,6 +18,18 @@
 }
 else
 {
+    <div class="row">
+        <div class="col-md-12">
+            <div style="text-align: right">
+                <input type="text" id="NewPlaylist" @bind="searchText" @bind:event="oninput" class="form-control" style="display: inline-block !important; width:300px;margin-bottom:0px" placeholder="Type to search the artist">
+            </div>
+            <div style ="text-align: right">
+                <span class="text-muted ml-5">
+                    Showing @filteredArtists.Count out of @Artists.Count
+                </span>
+            </div>
+        </div>
+    </div>
     <table class="table table-striped table-hover table-sm">
         <thead>
             <tr>
@@ -25,7 +38,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var artist in Artists)
+            @foreach (var artist in filteredArtists)
             {
                 <tr>
                     <td><a href="Artist/@artist.ArtistId">@artist.Name</a></td>
@@ -40,30 +53,23 @@ else
     private List<Artist> Artists;
     [Inject] IDbContextFactory<ChinookContext> DbFactory { get; set; }
     private string CurrentUserId;
-    private string? newPlayListName;
+    //private string? newPlayListName;
     private Modal PlaylistDialog { get; set; }
     [CascadingParameter] private Task<AuthenticationState> authenticationState { get; set; }
+    private string searchText = "";
+    private List<Artist> filteredArtists => Artists.Where(x => x.Name.ToLower().Contains(searchText.ToLower())).ToList();
 
 
 
     protected override async Task OnInitializedAsync() {
         await InvokeAsync(StateHasChanged);
         Artists = await GetArtists();
-        newPlayListName = string.Empty;
+        //newPlayListName = string.Empty;
     }
 
     public async Task<List<Artist>> GetArtists()
-    {   
-        var dbContext = await DbFactory.CreateDbContextAsync();
-        var users = dbContext.Users.Include(a => a.UserPlaylists).ToList();
-        
-        return dbContext.Artists.ToList();
-    }
-
-    public async Task<List<Album>> GetAlbumsForArtist(int artistId)
     {
-        var dbContext = await DbFactory.CreateDbContextAsync();
-        return dbContext.Albums.Where(a => a.ArtistId == artistId).ToList();
+        return await artistService.GetAllArtistsAsync();
     }
 
     private void OpenPlaylistDialog()
@@ -71,17 +77,17 @@ else
         PlaylistDialog.Open();
     }
 
-    private async Task CreatePlaylist()
-    {
-        if (string.IsNullOrEmpty(newPlayListName))
-        {
-            return;
-        }
-        var newPlayList = new Models.Playlist() { Name = newPlayListName };
-        await playListService.CreateNewPlaylistAsync(newPlayList, CurrentUserId);
-        newPlayListName = string.Empty;
-        PlaylistDialog.Close();
-    }
+    //private async Task CreatePlaylist()
+    //{
+    //    if (string.IsNullOrEmpty(newPlayListName))
+    //    {
+    //        return;
+    //    }
+    //    var newPlayList = new Models.Playlist() { Name = newPlayListName };
+    //    await playListService.CreateNewPlaylistAsync(newPlayList, CurrentUserId);
+    //    newPlayListName = string.Empty;
+    //    PlaylistDialog.Close();
+    //}
 
     private async Task<string> GetUserId()
     {
@@ -91,7 +97,7 @@ else
     }
 }
 
-<Modal @ref="PlaylistDialog">
+@*<Modal @ref="PlaylistDialog">
     <Title>
         Create Playlist
     </Title>
@@ -105,4 +111,4 @@ else
     <Footer>
         <button class="btn btn-success" @onclick="CreatePlaylist">Save</button>
     </Footer>
-</Modal>
+</Modal>*@

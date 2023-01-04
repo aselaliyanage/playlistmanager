@@ -1,13 +1,9 @@
 ﻿@using Chinook.ClientModels;
 @using Chinook.Services;
 @using System.Security.Claims;
-@using Microsoft.AspNetCore.SignalR.Client;
 @inject IPlaylistService playListService;
 @inject NavMenuStateService navMenuState;
-@*@implements IDisposable*@
-
-@inject NavigationManager Navigation
-@implements IAsyncDisposable
+@implements IDisposable
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -56,7 +52,6 @@
     private IList<Playlist> playlists;
     private string CurrentUserId;
     private string? newPlayListName;
-    private HubConnection? hubConnection;
 
     private void ToggleNavMenu()
     {
@@ -65,28 +60,9 @@
 
     protected override async Task OnInitializedAsync()
     {        
-        //navMenuState.OnChange += MenuChanged;
+        navMenuState.OnChange += MenuChanged;
         CurrentUserId = await GetUserId();
         await Init();
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:7295/Artist")
-            .Build();
-
-        hubConnection.On<long, string>("PlaylistAdded", (id, playlistName) =>
-        {
-            playlists.Add(new Playlist { Id = id, Name = playlistName });
-            InvokeAsync(StateHasChanged);
-        });
-
-        await hubConnection.StartAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
     }
 
     private async Task Init()
@@ -119,16 +95,16 @@
         PlaylistDialog.Close();
     }
 
-    //public void Dispose()
-    //{
-    //    navMenuState.OnChange -= MenuChanged;
-    //}
+    public void Dispose()
+    {
+        navMenuState.OnChange -= MenuChanged;
+    }
 
-    //private void MenuChanged(long newPlaylistId, string newPlaylistName)
-    //{
-    //    playlists.Add(new Playlist { Id = newPlaylistId, Name = newPlaylistName });
-    //    InvokeAsync(StateHasChanged);
-    //}
+    private void MenuChanged(long newPlaylistId, string newPlaylistName)
+    {
+        playlists.Add(new Playlist { Id = newPlaylistId, Name = newPlaylistName });
+        InvokeAsync(StateHasChanged);
+    }
 }
 
 <Modal @ref="PlaylistDialog">

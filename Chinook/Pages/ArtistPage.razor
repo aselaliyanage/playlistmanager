@@ -5,14 +5,12 @@
 @using Chinook.Models
 @using Chinook.ClientModels
 @using Chinook.Services;
-@using Microsoft.AspNetCore.SignalR.Client;
-@using Microsoft.AspNetCore.SignalR;
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims;
 @inject IArtistService artistService;
 @inject ITracksService tracksService;
 @inject IPlaylistService playListService;
-@inject IHubContext<PlaylistHub> hubContext;
+@inject NavMenuStateService menuStateService;
 
 
 @if (!string.IsNullOrWhiteSpace(InfoMessage))
@@ -80,7 +78,6 @@ else
     private List<ClientModels.Playlist> playlists;
     private long selectedPlayListId;
     private string newPlaylistName;
-    private readonly IHubContext<PlaylistHub> _hubContext;
 
     protected override async Task OnInitializedAsync()
     {
@@ -132,7 +129,7 @@ else
             }
             else // If the track has been added to an existing playlist
             {
-                await hubContext.Clients.All.SendAsync("PlaylistAdded", playlistId, newPlaylistName);
+                menuStateService.MenuChanged(playlistId, newPlaylistName);
             }
 
             InfoMessage = $"Track {Artist.Name} - {SelectedTrack.AlbumTitle} - {SelectedTrack.TrackName} added to playlist {playlistName}.";

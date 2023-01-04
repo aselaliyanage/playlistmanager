@@ -159,7 +159,7 @@ else
         {
             await Init();
             InfoMessage = $"Playlist is renamed successfully";
-            await menuStateService.MenuChanged(PlaylistId, newPlaylistName);
+            await menuStateService.MenuChanged();
         }
     }
 
@@ -168,6 +168,7 @@ else
         var isRemoved = await playlistService.RemovePlaylist(PlaylistId);
         if (isRemoved)
         {
+            await menuStateService.MenuChanged();
             navigationManager.NavigateTo("");
         }
     }

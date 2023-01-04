@@ -1,6 +1,7 @@
 ﻿using Chinook.ClientModels;
 using Chinook.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Chinook.Services
@@ -157,6 +158,19 @@ namespace Chinook.Services
             if(playListInDb != null)
             {
                 playListInDb.Name = newPlaylistname;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> RemovePlaylist(long playlistId)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            var playListInDb = dbContext.Playlists.Include(x => x.Tracks).AsTracking().Where(x => x.PlaylistId == playlistId).FirstOrDefault();
+            if (playListInDb != null)
+            {
+                dbContext.Playlists.Remove(playListInDb);
                 dbContext.SaveChanges();
                 return true;
             }

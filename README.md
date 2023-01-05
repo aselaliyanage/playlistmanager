@@ -25,3 +25,5 @@ There are branches created for the above features and respective branches for th
 	-> Feature03 - Removing a track from the playlist
 	-> Feature04 - Renaming a playlist
 	-> Feature05 - Deleting a playlist
+	-> Feature06 - Search for artist name
+	-> Feature07 - Favorite / unfavorite tracks

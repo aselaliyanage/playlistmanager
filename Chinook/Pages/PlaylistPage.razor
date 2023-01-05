@@ -141,9 +141,17 @@ else
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} added to playlist Favorites.";
     }
 
-    private void UnfavoriteTrack(long trackId)
+    private async Task UnfavoriteTrack(long trackId)
     {
         var track = Playlist.Tracks.FirstOrDefault(t => t.TrackId == trackId);
+        var favoritesPlaylist = await playlistService.GetFavoritesPlaylistOfUser(CurrentUserId);
+        if (favoritesPlaylist != null)
+        {
+            if (await playlistService.RemoveTrackFromFavoritesPlaylist(favoritesPlaylist.Id, trackId, CurrentUserId))
+            {
+                Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
+            }
+        }
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} removed from playlist Favorites.";
     }
 

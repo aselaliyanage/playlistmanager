@@ -14,5 +14,6 @@ namespace Chinook.Services
         Task<ClientModels.Playlist> GetFavoritesPlaylistOfUser(string userId);
         Task<bool> CreateFavoritesPlaylistAndAddTrack(long trackId, string userId);
         Task<bool> AddTrackToFavoritesPlaylist(long favoritesPlaylistId, long trackId, string userId);
+        Task<bool> RemoveTrackFromFavoritesPlaylist(long favoritesPlaylistId, long trackId, string userId);
     }
 }

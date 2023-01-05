@@ -50,6 +50,7 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
     private IList<Playlist> playlists;
+    private Playlist favoritesPlaylist;
     private string CurrentUserId;
     private string? newPlayListName;
 
@@ -68,7 +69,7 @@
     private async Task Init()
     {
         newPlayListName = string.Empty;
-        playlists = await playListService.GetCurrentUserPlaylistsAsync();
+        playlists = await playListService.GetCurrentUserPlaylistsAsync(CurrentUserId);
     }
 
     private async Task<string> GetUserId()

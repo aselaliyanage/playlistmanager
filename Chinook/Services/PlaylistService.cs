@@ -15,17 +15,25 @@ namespace Chinook.Services
             _appDbContext = appDbContextFactory;
         }
 
-        public async Task<List<ClientModels.Playlist>> GetCurrentUserPlaylistsAsync()
+        public async Task<List<ClientModels.Playlist>> GetCurrentUserPlaylistsAsync(string currentUserId)
         {
             using var dbContext = await _appDbContext.CreateDbContextAsync();
             
             return dbContext.UserPlaylists
                 .Include(x => x.Playlist)
+                .Where(x => x.UserId == currentUserId)
                 .Select(x => new ClientModels.Playlist
                 {
                     Id = x.PlaylistId,
                     Name = x.Playlist.Name!
                 }).ToList();
+        }
+
+        public async Task<UserPlaylist> GetFavoritesPlaylistOfUser(string userId)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            var favoritesPlaylist = dbContext.UserPlaylists.Include(x => x.Playlist).FirstOrDefault(x => x.UserId == userId && x.Playlist.Name == "Favorites");
+            return favoritesPlaylist;
         }
 
         public async Task<ClientModels.Playlist> GetPlayListAsyn(string currentUserId, long playListId)
@@ -79,6 +87,37 @@ namespace Chinook.Services
 
             await dbContext.Playlists.AddAsync(playlist);
             return playlist.PlaylistId;
+        }
+
+        public async Task<bool> CreateFavoritesPlaylistAndAddTrack(long trackId, string userId)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            var track = dbContext.Tracks.Where(x => x.TrackId == trackId).First();
+            var favoritePlaylist = new Models.Playlist()
+            { 
+                Name = "Favorites", 
+                Tracks = new List<Track>() { track }
+            };
+            await CreateNewPlaylistAsync(favoritePlaylist, userId, dbContext);
+            dbContext.SaveChanges();
+            return true;
+        }
+
+        public async Task<bool> AddTrackToFavoritesPlaylist(long favoritesPlaylistId, long trackId, string userId)
+        {
+            using var dbContext = await _appDbContext.CreateDbContextAsync();
+            var track = dbContext.Tracks.Where(x => x.TrackId == trackId).First();
+            var playListInDb = dbContext.Playlists.Include(x => x.Tracks).AsTracking().Where(x => x.PlaylistId == favoritesPlaylistId).FirstOrDefault();
+            if (playListInDb?.Tracks != null)
+            {
+                playListInDb.Tracks.Add(track);
+            }
+            else
+            {
+                playListInDb!.Tracks = new List<Track> { track };
+            }
+            dbContext.SaveChanges();
+            return true;
         }
 
         public async Task<(bool, long)> AddTrackToPlaylistAsync(string newPlaylistName, long playlistId, long trackId, string userId)

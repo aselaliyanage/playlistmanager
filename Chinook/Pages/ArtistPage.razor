@@ -49,7 +49,7 @@ else
                     <td>
                         @if (track.IsFavorite)
                         {
-                            <a href="#" class="m-1" title="Unmark as favorite" @onclick="@(() => UnfavoriteTrack(track.TrackId))" @onclick:preventDefault><i class="bi bi-star-filled"></i></a>
+                            <a href="#" class="m-1" title="Unmark as favorite" @onclick="@(() => UnfavoriteTrack(track.TrackId))" @onclick:preventDefault><i class="bi bi-star-fill"></i></a>
                         }
                         else
                         {
@@ -86,7 +86,7 @@ else
         CurrentUserId = await GetUserId();
         Artist = await artistService.GetArtistAsync(ArtistId);
         Tracks = await tracksService.GetTracksOfArtist(ArtistId, CurrentUserId);
-        playlists = await playListService.GetCurrentUserPlaylistsAsync();
+        playlists = await playListService.GetCurrentUserPlaylistsAsync(CurrentUserId);
     }
 
     private async Task<string> GetUserId()
@@ -96,9 +96,18 @@ else
         return userId;
     }
 
-    private void FavoriteTrack(long trackId)
+    private async Task FavoriteTrack(long trackId)
     {
         var track = Tracks.FirstOrDefault(t => t.TrackId == trackId);
+        var favoritesPlaylist = await playListService.GetFavoritesPlaylistOfUser(CurrentUserId);
+        if (favoritesPlaylist == null)
+        {
+            await playListService.CreateFavoritesPlaylistAndAddTrack(trackId, CurrentUserId);
+        }
+        else
+        {
+            await playListService.AddTrackToFavoritesPlaylist(favoritesPlaylist.PlaylistId, trackId, CurrentUserId);
+        }
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} added to playlist Favorites.";
     }
 

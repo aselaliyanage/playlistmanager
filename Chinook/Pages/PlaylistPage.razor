@@ -11,8 +11,11 @@
 
 <div class="d-flex">
     <h1 style="margin-right:10px">Playlist <strong>@Playlist.Name</strong></h1>
-    <a href="#" class="m-1 px-1" title="Rename the playlist" @onclick="@(() => { isEditMode = !isEditMode; newPlaylistName = string.Empty; })" @onclick:preventDefault><i class="bi bi-pencil-square" style='font-size:25px;'></i></a>
-    <a href="#" class="m-1 px-1" title="Delete the playlist" @onclick="@(() => OpenDeleteConfirmation())" @onclick:preventDefault><i class="bi bi-trash" style='font-size:25px;'></i></a>
+    @if (Playlist.Name != "Favorites")
+    {
+        <a href="#" class="m-1 px-1" title="Rename the playlist" @onclick="@(() => { isEditMode = !isEditMode; newPlaylistName = string.Empty; })" @onclick:preventDefault><i class="bi bi-pencil-square" style='font-size:25px;'></i></a>
+        <a href="#" class="m-1 px-1" title="Delete the playlist" @onclick="@(() => OpenDeleteConfirmation())" @onclick:preventDefault><i class="bi bi-trash" style='font-size:25px;'></i></a>
+    }
 </div>
 
 @if (isEditMode)
@@ -119,15 +122,36 @@ else
         return userId;
     }
 
-    private void FavoriteTrack(long trackId)
+    private async Task FavoriteTrack(long trackId)
     {
         var track = Playlist.Tracks.FirstOrDefault(t => t.TrackId == trackId);
+        var favoritesPlaylist = await playlistService.GetFavoritesPlaylistOfUser(CurrentUserId);
+        if (favoritesPlaylist == null)
+        {
+            if (await playlistService.CreateFavoritesPlaylistAndAddTrack(trackId, CurrentUserId))
+            {
+                await menuStateService.MenuChanged();
+            }
+        }
+        else
+        {
+            await playlistService.AddTrackToFavoritesPlaylist(favoritesPlaylist.Id, trackId, CurrentUserId);
+        }
+        Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} added to playlist Favorites.";
     }
 
-    private void UnfavoriteTrack(long trackId)
+    private async Task UnfavoriteTrack(long trackId)
     {
         var track = Playlist.Tracks.FirstOrDefault(t => t.TrackId == trackId);
+        var favoritesPlaylist = await playlistService.GetFavoritesPlaylistOfUser(CurrentUserId);
+        if (favoritesPlaylist != null)
+        {
+            if (await playlistService.RemoveTrackFromFavoritesPlaylist(favoritesPlaylist.Id, trackId, CurrentUserId))
+            {
+                Playlist = await playlistService.GetPlayListAsyn(CurrentUserId, PlaylistId);
+            }
+        }
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} removed from playlist Favorites.";
     }
 

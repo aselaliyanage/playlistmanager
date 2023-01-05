@@ -21,7 +21,7 @@ namespace Chinook.Services
             
             return dbContext.UserPlaylists
                 .Include(x => x.Playlist)
-                .Where(x => x.UserId == currentUserId)
+                .Where(x => x.UserId == currentUserId && x.Playlist.Name != "Favorites")
                 .Select(x => new ClientModels.Playlist
                 {
                     Id = x.PlaylistId,
@@ -29,10 +29,25 @@ namespace Chinook.Services
                 }).ToList();
         }
 
-        public async Task<UserPlaylist> GetFavoritesPlaylistOfUser(string userId)
+        public async Task<ClientModels.Playlist> GetFavoritesPlaylistOfUser(string userId)
         {
             using var dbContext = await _appDbContext.CreateDbContextAsync();
-            var favoritesPlaylist = dbContext.UserPlaylists.Include(x => x.Playlist).FirstOrDefault(x => x.UserId == userId && x.Playlist.Name == "Favorites");
+            var favoritesPlaylist = dbContext.UserPlaylists
+                .Include(x => x.Playlist)
+                .Where(x => x.UserId == userId && x.Playlist.Name == "Favorites")
+                .Select(x => new ClientModels.Playlist
+                {
+                    Id = x.PlaylistId,
+                    Name = x.Playlist.Name!,
+                    Tracks = x.Playlist.Tracks.Select(pt => new PlaylistTrack
+                    {
+                        AlbumTitle = pt.Album.Title,
+                        ArtistName = pt.Album.Artist.Name,
+                        TrackId = pt.TrackId,
+                        TrackName = pt.Name,
+                        IsFavorite = true
+                    }).ToList()
+                }).FirstOrDefault();
             return favoritesPlaylist;
         }
 

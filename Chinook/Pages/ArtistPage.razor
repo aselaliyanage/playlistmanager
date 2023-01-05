@@ -102,12 +102,16 @@ else
         var favoritesPlaylist = await playListService.GetFavoritesPlaylistOfUser(CurrentUserId);
         if (favoritesPlaylist == null)
         {
-            await playListService.CreateFavoritesPlaylistAndAddTrack(trackId, CurrentUserId);
+            if(await playListService.CreateFavoritesPlaylistAndAddTrack(trackId, CurrentUserId))
+            {
+                await menuStateService.MenuChanged();
+            }
         }
         else
         {
-            await playListService.AddTrackToFavoritesPlaylist(favoritesPlaylist.PlaylistId, trackId, CurrentUserId);
+            await playListService.AddTrackToFavoritesPlaylist(favoritesPlaylist.Id, trackId, CurrentUserId);
         }
+        Tracks = await tracksService.GetTracksOfArtist(ArtistId, CurrentUserId);
         InfoMessage = $"Track {track.ArtistName} - {track.AlbumTitle} - {track.TrackName} added to playlist Favorites.";
     }
 
